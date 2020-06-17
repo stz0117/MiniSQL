@@ -1,5 +1,7 @@
-from cmd import Cmd
+import os
 import re
+from cmd import Cmd
+
 import API
 
 
@@ -99,7 +101,7 @@ def create(arg: str):
             else:
                 attributes[attribute_names.index(pk)]['unique'] = True
         print(table_name, attributes, pk)
-        # API.create_table(table_name, attributes, pks)
+        API.create_table(table_name, attributes, pk)
 
     elif arg[:5] == 'index':
         arg = arg[5:]
@@ -123,7 +125,7 @@ def create(arg: str):
         if ',' in indexed_attr:
             raise Exception('Only single attribute index is supported.')
         print(index_name, table_name, indexed_attr)
-        # API.create_index(index_name, table_name, indexed_attr)
+        API.create_index(index_name, table_name, indexed_attr)
     else:
         raise Exception("The item you want to create is not supported.")
 
@@ -134,11 +136,11 @@ def drop(arg: str):
     if arg[:5] == 'table':
         arg = arg[5:].strip()
         print(arg)
-        # API.drop_table(arg)
+        API.drop_table(arg)
     elif arg[:5] == 'index':
         arg = arg[5:].strip()
         print(arg)
-        # API.drop_index(arg)
+        API.drop_index(arg)
     else:
         raise Exception("The item you want to drop is not supported.")
 
@@ -157,21 +159,21 @@ def select(arg: str):
     if location_where == -1:
         table_name = arg[location_from+len('from'):].strip()
         print(table_name, attributes)
-        # API.select(table_name, attributes)
+        API.select(table_name, attributes)
     else:
         table_name = arg[location_from+len('from'):location_where].strip()
         conditions = arg[location_where+len('where'):].strip().split('and')
         conditions = list(map(str.strip, conditions))
         where = []
         for condition in conditions:
-            operators = ['=', '<>', '<', '>', '<=', '>=']
+            operators = ['<>', '<=', '>=', '=', '<', '>']
             no_operator = True
             for operator in operators:
                 if operator in condition:
                     op = operator
                     location = condition.find(op)
                     l_op = condition[:location].strip()
-                    r_op = condition[location + 1:].strip()
+                    r_op = condition[location + len(op):].strip()
                     no_operator = False
                     break
             if no_operator:
@@ -179,7 +181,7 @@ def select(arg: str):
             r_op = auto_type(r_op)
             where.append({'operator': operator, 'l_op': l_op, 'r_op': r_op})
         print(table_name, attributes, where)
-        # API.select(table_name, attributes, where)
+        API.select(table_name, attributes, where)
 
 
 def insert(arg: str):
@@ -202,7 +204,7 @@ def insert(arg: str):
     values = list(map(str.strip, values))
     values = list(map(auto_type, values))
     print(table_name, values)
-    # API.insert(table_name, values)
+    API.insert(table_name, values)
 
 
 def delete(arg: str):
@@ -217,7 +219,7 @@ def delete(arg: str):
     if location_where == -1:
         table_name = arg[location_from+4:].strip()
         print(table_name)
-        # API.delete(table_name)
+        API.delete(table_name)
     else:
         table_name = arg[location_from+4: location_where].strip()
         conditions = arg[location_where+len('where'):].strip().split('and')
@@ -239,7 +241,7 @@ def delete(arg: str):
             r_op = auto_type(r_op)
             where.append({'operator': operator, 'l_op': l_op, 'r_op': r_op})
         print(table_name, where)
-        # API.delete(table_name, where)
+        API.delete(table_name, where)
 
 
 def show(arg: str):
@@ -254,10 +256,10 @@ def show(arg: str):
         else:
             table_name = arg[location_table+5:].strip()
             print(table_name)
-            # API.show_table(table_name)
+            API.show_table(table_name)
     else:
         pass
-        # API.show_tables()
+        API.show_tables()
 
 class Interpreter(Cmd):
     prompt = "MiniSQL> "
@@ -265,6 +267,9 @@ class Interpreter(Cmd):
 
     def __init(self):
         Cmd.__init__(self)
+
+    def preloop(self):
+        API.initialize(os.getcwd())
 
     def do_create(self, arg: str):
         try:
@@ -302,6 +307,10 @@ class Interpreter(Cmd):
         except Exception as e:
             print(e)
 
+    def do_commit(self, arg: str):
+        API.save()
+
+
     def do_exefile(self, arg: str):
         switch = {
             'create': create,
@@ -313,7 +322,7 @@ class Interpreter(Cmd):
         }
         i = 1
         try:
-            f = open(arg, 'r')
+            f = open(arg.strip(';').strip(), 'r')
             while 1:
                 line = f.readline().strip()
                 if line == '':
@@ -328,6 +337,7 @@ class Interpreter(Cmd):
         pass
 
     def do_exit(self, arg: str):
+        API.save()
         print('Bye~')
         return True
 

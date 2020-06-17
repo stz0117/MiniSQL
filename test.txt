@@ -1,8 +1,9 @@
 create table S(ID int , name char(12) unique, age int, gender char(1), primary key (ID));
-create index sname_index on S (name)
-insert into student values ('12345678','wy',22,'M');
-select * from student where sage > 20 and sgender = 'F' and sscore < 89.5;
-delete from student where sno = '88888888';
-delete from student;
-drop index sname;
+insert into S values (12345678,'wy',22,'M');
+insert into S values (123456,'stz',20,'M');
+insert into S values (456,'lyxt',20,'F');
+select * from S;
+select * from S where age >= 20 and gender = 'M';
+delete from S where age = 20;
+delete from S;
 drop table S;
