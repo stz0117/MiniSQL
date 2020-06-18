@@ -82,7 +82,9 @@ def recursive_store_node(node):
     cur_node = {}
     cur_node['is_leaf'] = node.is_leaf
     cur_node['keys'] = node.keys
-    if node.is_leaf == True and node.pointers[-1] != '':
+    if node.is_leaf == True and node.pointers == []:
+        pass
+    elif node.is_leaf == True and node.pointers[-1] != '':
         cur_node['pointers'] = node.pointers[0:-1]
     elif node.is_leaf == True and node.pointers[-1] == '':
         cur_node['pointers'] = node.pointers
