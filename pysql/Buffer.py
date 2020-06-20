@@ -249,13 +249,17 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
     pos = find_attr_pos(table_name, attribute)
     if pos == -1:
         raise Exception("No such attribute.")
+    pk_pos = tables[table_name].primary_key
+
     # first search in the buffer
     global buffers
     buffer = buffers[table_name]
     buffer_range = range(buffer.file_line, buffer.file_line + buffer.cur_size)
+    deleted_pks = []
     for i, line in enumerate(buffer.content):
         line = decode(''.join(buffer.format_list), line)
         if check(line[pos], value, cond):
+            deleted_pks += [line[pk_pos]]
             buffer.content[i] = \
                 struct.pack(f'<cI{buffer.line_size - 5}s',
                             b'\x01', buffer.ins_pos,
@@ -275,12 +279,13 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
         line = f.read(buffer.line_size)
         if line == b'':
             f.close()
-            return
+            break
         if line[0] == 1:
             continue
         else:
             line = decode(''.join(buffer.format_list), line)
             if check(line[pos], value, cond):
+                deleted_pks += [line[pk_pos]]
                 f.seek(buffer.line_size * i)
                 f.write(
                     struct.pack(f'<cI{buffer.line_size - 5}s',
@@ -288,6 +293,9 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
                                 buffer.ins_pos,
                                 b'\x00' * (buffer.line_size - 5)))
                 buffer.ins_pos = i
+    return deleted_pks
+    # when you doing conditional delete, first call Buffer.delete_record,
+    # it will tell you pks of the records which are deleted
 
 
 def check_unique(table_name: str, line_size: int, line: bytes):
@@ -323,7 +331,7 @@ def check_unique(table_name: str, line_size: int, line: bytes):
         ln = f.read(line_size)
         if ln == b'':
             f.close()
-            return
+            break
         if ln[0] == 1:
             continue
         for i, j in unique:
@@ -349,15 +357,18 @@ def insert_record(table_name: str, record: []):
     # if we are inserting to the last line of the file
     # the buffer will be empty
     # so the operation is different
+    tmp = buffer.ins_pos
     if buffer.cur_size == 0:
         buffer.ins_pos += 1
         buffer.content = [line]
         buffer.cur_size = 1
     else:
-        tmp = buffer.ins_pos - buffer.file_line
         buffer.ins_pos = struct.unpack('<cI', buffer.content[buffer.ins_pos - buffer.file_line][0:5])[1]
-        buffer.content[tmp] = line
+        buffer.content[tmp - buffer.file_line] = line
     buffer.is_dirty = True
+    return tmp
+    # when you insert a node, first call Buffer.insert_record,
+    # it will tell you which line the record is stored
 
 
 def create_table(table_name: str):
@@ -394,7 +405,7 @@ def unpin_buffer(table_name: str):
     buffers[table_name].pin = False
 
 
-# __initialize__()
+__initialize__()
 # a = find_line('S', 5)
 # print(a)
 # a = find_line('S', 9)
@@ -402,9 +413,10 @@ def unpin_buffer(table_name: str):
 # for rec in find_record('S', 'gender', '=', 'F'):
 #     print(rec)
 # delete_line('S', 5)
+# print(delete_record('S', 'gender', '=', 'M'))
 # insert_record('S', [201801005, 'zyx', 20, 'M'])
 # insert_record('S', [201801011, 'cyj', 20, 'F'])
 # create_table('S')
 # drop_table('S')
-# __finalize__()
+__finalize__()
 print('123')
