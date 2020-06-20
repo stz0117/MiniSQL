@@ -7,3 +7,7 @@ select * from S where age >= 20 and gender = 'M';
 delete from S where age = 20;
 delete from S;
 drop table S;
+
+大概想法是……
+b+树里面只储存  pk : 行数  这对信息
+buffer这边支持通过行数查询、删除，所以有主键的查询就是

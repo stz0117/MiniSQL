@@ -128,28 +128,31 @@ def __finalize__():
         buffer.save()
 
 
-def check(value_l, value_r, cond):
-    if cond == '<>':
-        if value_l != value_r:
-            return True
-    elif cond == '<=':
-        if value_l <= value_r:
-            return True
-    elif cond == '>=':
-        if value_l >= value_r:
-            return True
-    elif cond == '=':
-        if value_l == value_r:
-            return True
-    elif cond == '<':
-        if value_l < value_r:
-            return True
-    elif cond == '>':
-        if value_l > value_r:
-            return True
-    else:
-        raise Exception("No such operation.")
-    return False
+def check(line: list, columns: dict, where: list):
+    for cond in where:
+        column = columns[cond['l_op']]
+        value_l = line[column]
+        if cond['operator'] == '<>':
+            if not value_l != cond['r_op']:
+                return False
+        elif cond['operator'] == '<=':
+            if not value_l <= cond['r_op']:
+                return False
+        elif cond['operator'] == '>=':
+            if not value_l >= cond['r_op']:
+                return False
+        elif cond['operator'] == '=':
+            if not value_l == cond['r_op']:
+                return False
+        elif cond['operator'] == '<':
+            if not value_l < cond['r_op']:
+                return False
+        elif cond['operator'] == '>':
+            if not value_l > cond['r_op']:
+                return False
+        else:
+            raise Exception("No such operation.")
+    return True
 
 
 def decode(format_str: str, line: bytes):
@@ -189,10 +192,8 @@ def find_line(table_name: str, line_number: int):
 
 
 # 'S' 'gender' '==' 'F'
-def find_record(table_name: str, attribute: str, cond: str, value):
-    pos = find_attr_pos(table_name, attribute)
-    if pos == -1:
-        raise Exception("No such attribute.")
+# def find_record(table_name: str, attribute: str, cond: str, value):
+def find_record(table_name: str, columns: dict, where: list):
     # first find them in buffer
     global buffers
     buffer = buffers[table_name]
@@ -200,7 +201,7 @@ def find_record(table_name: str, attribute: str, cond: str, value):
     buffer_range = range(buffer.file_line, buffer.file_line + buffer.cur_size)
     for line in buffer.content:
         line = decode(''.join(buffer.format_list), line)
-        if check(line[pos], value, cond):
+        if check(line, columns, where):
             results += [line]
     # then find them in file (no fetch)
     f = open(f'dbfiles/table_files/table_{table_name}.bin', 'rb')
@@ -223,7 +224,7 @@ def find_record(table_name: str, attribute: str, cond: str, value):
             continue
         else:
             line = decode(''.join(buffer.format_list), line)
-            if check(line[pos], value, cond):
+            if check(line, columns, where):
                 results += [line]
     return results
 
@@ -245,12 +246,8 @@ def delete_line(table_name: str, line_number: int):
     buffer.ins_pos = line_number
 
 
-def delete_record(table_name: str, attribute: str, cond: str, value):
-    pos = find_attr_pos(table_name, attribute)
-    if pos == -1:
-        raise Exception("No such attribute.")
+def delete_record(table_name: str, column: dict, where: list):
     pk_pos = tables[table_name].primary_key
-
     # first search in the buffer
     global buffers
     buffer = buffers[table_name]
@@ -258,7 +255,7 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
     deleted_pks = []
     for i, line in enumerate(buffer.content):
         line = decode(''.join(buffer.format_list), line)
-        if check(line[pos], value, cond):
+        if check(line, column, where):
             deleted_pks += [line[pk_pos]]
             buffer.content[i] = \
                 struct.pack(f'<cI{buffer.line_size - 5}s',
@@ -267,7 +264,7 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
             buffer.ins_pos = buffer.file_line + i
             buffer.is_dirty = True
     # then search in the file (no fetch)
-    f = open(f'dbfiles/table_files/table_{table_name}.bin', 'rb')
+    f = open(f'dbfiles/table_files/table_{table_name}.bin', 'rb+')
     f.seek(buffer.line_size)
     i = 0
     while 1:
@@ -284,7 +281,7 @@ def delete_record(table_name: str, attribute: str, cond: str, value):
             continue
         else:
             line = decode(''.join(buffer.format_list), line)
-            if check(line[pos], value, cond):
+            if check(line, column, where):
                 deleted_pks += [line[pk_pos]]
                 f.seek(buffer.line_size * i)
                 f.write(
@@ -410,13 +407,21 @@ __initialize__()
 # print(a)
 # a = find_line('S', 9)
 # print(a)
-# for rec in find_record('S', 'gender', '=', 'F'):
+
+column = {'ID': 0, 'name': 1, 'age': 2, 'gender': 3}
+where = [{'operator': '=', 'l_op': 'gender', 'r_op': 'F'}, {'operator': '<', 'l_op': 'ID', 'r_op': 201801009}]
+
+# for rec in find_record('S', column, where):
 #     print(rec)
+
 # delete_line('S', 5)
-# print(delete_record('S', 'gender', '=', 'M'))
+
+# print(delete_record('S', column, where))
+
+
 # insert_record('S', [201801005, 'zyx', 20, 'M'])
 # insert_record('S', [201801011, 'cyj', 20, 'F'])
 # create_table('S')
-# drop_table('S')
+# # drop_table('S')
 __finalize__()
 print('123')
