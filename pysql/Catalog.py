@@ -105,7 +105,8 @@ def check_types_of_table(table_name, values):
                                 " can be no longer than %d." % (table_name, element.column_name, element.length))
 
         if element.is_unique:
-            Index.check_unique(table_name, i, value)
+            #Index.check_unique(table_name, i, value)
+            pass
 
 
 # done
@@ -174,7 +175,7 @@ def getcolumndic(table_name:str):
     global tables;
     for fullcol in tables[table_name].columns:
         colname=fullcol.column_name
-        result[cnt]=colname
+        result[colname]=cnt
         cnt+=1
     return  result;
 
