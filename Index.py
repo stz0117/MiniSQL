@@ -6,73 +6,81 @@ import os
 N = 4
 
 tables = {}
-path = ''
+recordpath = ''
+__last_leaf_pointer = ''
+
+
+class node():
+    def __init__(self, isleaf, keys0, pointers0, parent0=''):
+        self.is_leaf = isleaf
+        self.keys = keys0
+        self.pointers = pointers0
+        self.parent = parent0
 
 
 def __initialize__(__path):
-    global path
-    path = __path
-    if not os.path.exists(os.path.join(path, 'dbfiles/index_files')):
-        os.makedirs(os.path.join(path, 'dbfiles/index_files'))
-        tables['sys'] = node(True, ['alan'], [['alan', '123456'], ''])
+    global recordpath
+    recordpath = os.path.join(__path, 'dbfiles/records')
+
+    if not os.path.exists(recordpath):
+        os.makedirs(recordpath)
+        tables['sys'] = node(True, ['key0'], [['key0', 'key1'], ''])
         __store__()
+
     __load__()
 
 
 def __finalize__():
     __store__()
 
-
-class node():
-    def __init__(self, is_leaf, keys, pointers, parent=''):
-        self.is_leaf = is_leaf
-        self.keys = keys
-        self.pointers = pointers
-        self.parent = parent
-
-
-__last_leaf_pointer = ''
-
-
+#def __init__(self, isleaf, keys0, pointers0, parent0=''):
 def __load__():
     global __last_leaf_pointer
-    f = open(os.path.join(path, 'dbfiles/index_files/tables_B-plus_tree.msql'))
+    f = open(os.path.join(recordpath, 'recordfile'))
     json_tables = json.loads(f.read())
     f.close()
     for table in json_tables.items():
-        if len(table[1]['keys']) == 0:
-            tables[table[0]] = node(True, [], [])
+        temp_name = table[0]
+        temp_content = table[1]
+        if len(temp_content['keys']) == 0:
+            tables[temp_name] = node(True, [], [])
             continue
-        tables[table[0]] = \
-            node(table[1]['is_leaf'], table[1]['keys'], table[1]['pointers'], '')
-        if not tables[table[0]].is_leaf:
-            tables[table[0]].pointers = \
-                recursive_load_node(table[1]['pointers'], tables[table[0]])
+        tables[temp_name] = \
+            node(temp_content['is_leaf'],temp_content['keys'], temp_content['pointers'], '')
+        if tables[temp_name].is_leaf:
+            continue
+
+        tables[temp_name].pointers = \
+            load_nodes(temp_content['pointers'], tables[temp_name])
 
 
-def recursive_load_node(pointer_list, parent):
+def load_nodes(pointer_list, parent):
     global __last_leaf_pointer
-    lists = []
+    nodelist = []
     for pointer in pointer_list:
-        new_node = node(pointer['is_leaf'], pointer['keys'], pointer['pointers'], parent)
-        lists.append(new_node)
-        if not lists[-1].is_leaf:
-            new_node.pointers = recursive_load_node(pointer['pointers'], lists[-1])
-        else:
+
+        if pointer['is_leaf']:
+            new_node = node(pointer['is_leaf'], pointer['keys'], pointer['pointers'], parent)
+            nodelist.append(new_node)
             if __last_leaf_pointer == '':
                 __last_leaf_pointer = new_node
             else:
                 __last_leaf_pointer.pointers.append(new_node)
                 __last_leaf_pointer = new_node
-    return lists
+        else:
+            new_node = node(pointer['is_leaf'], pointer['keys'], pointer['pointers'], parent)
+            nodelist.append(new_node)
+            new_node.pointers = load_nodes(pointer['pointers'], nodelist[-1])
+    return nodelist
 
 
 def __store__():
-    global path
+    global recordpath
     __tables = {}
     for table in tables.items():
         __tables[table[0]] = recursive_store_node(table[1])
-    f = open(os.path.join(path, 'dbfiles/index_files/tables_B-plus_tree.msql'), 'w')
+
+    f = open(os.path.join(recordpath, 'recordfile'), 'w')
     json_tables = json.dumps(__tables)
     f.write(json_tables)
     f.close()
@@ -82,7 +90,9 @@ def recursive_store_node(node):
     cur_node = {}
     cur_node['is_leaf'] = node.is_leaf
     cur_node['keys'] = node.keys
-    if node.is_leaf == True and node.pointers[-1] != '':
+    if node.is_leaf == True and node.pointers == []:
+        pass
+    elif node.is_leaf == True and node.pointers[-1] != '':
         cur_node['pointers'] = node.pointers[0:-1]
     elif node.is_leaf == True and node.pointers[-1] == '':
         cur_node['pointers'] = node.pointers
@@ -92,7 +102,7 @@ def recursive_store_node(node):
             cur_node['pointers'].append(recursive_store_node(__node))
     return cur_node
 
-
+'''
 def __prints(table):
     node = tables[table]
     __do_print(node)
@@ -112,17 +122,17 @@ def __do_print(node):
             print('parent:', node.parent.keys)
         for i in node.pointers:
             __do_print(i)
-
+'''
 
 # done
 def insert_into_table(table_name, __values):
-    for index, col in enumerate(Catalog.tables[table_name].columns):
+    for i, col in enumerate(Catalog.tables[table_name].columns):
         if col.type == 'int':
-            __values[index] = int(__values[index])
+            __values[i] = int(__values[i])
         elif col.type == 'char':
-            __values[index] = str(__values[index])
+            __values[i] = str(__values[i])
         elif col.type == 'float':
-            __values[index] = float(__values[index])
+            __values[i] = float(__values[i])
 
     cur_node = tables[table_name]
     __primary_key = Catalog.tables[table_name].primary_key
@@ -134,7 +144,7 @@ def insert_into_table(table_name, __values):
         cur_node.pointers.append('')
         print('Successfully insert into table %s,' % table_name, end='')
         return
-
+    
     cur_node = find_leaf_place(table_name, __values[__primary_key])
     if len(cur_node.keys) < N - 1:
         insert_into_leaf(cur_node, __values[__primary_key], __values)
@@ -174,7 +184,7 @@ def delete_from_table(table_name, where):
     # delete rows from table according to the statement's condition
     # usage : find_leaf_place_with_condition(table, column, condition, value)
     if where is None:
-        tables[table_name] = node(True, [], [], '')
+        tables[table_name] = node(True, [], [])
         print("Successfully delete all entrys from table '%s'," % table_name, end='')
     else:
         columns = {}
@@ -212,31 +222,34 @@ def delete_from_table(table_name, where):
 
 
 # done
+op_list = ['<','<=','>','>=','<>','=']
+
 def check_conditions(leaf, columns, where):
     for cond in where:
         # cond <-> column op value
         __value = leaf[columns[cond['l_op']]]
-        if cond['operator'] == '<':
-            if not (__value < cond['r_op']):
-                return False
-        elif cond['operator'] == '<=':
-            if not (__value <= cond['r_op']):
-                return False
-        elif cond['operator'] == '>':
-            if not (__value > cond['r_op']):
-                return False
-        elif cond['operator'] == '>=':
-            if not (__value >= cond['r_op']):
-                return False
-        elif cond['operator'] == '<>':
-            if not (__value != cond['r_op']):
-                return False
-        elif cond['operator'] == '=':
-            if not (__value == cond['r_op']):
-                return False
-        else:
+        if cond['operator'] not in op_list:
             raise Exception("Index Module : unsupported op.")
-    return True
+        else:
+            if cond['operator'] == op_list[0]:
+                if not (__value < cond['r_op']):
+                    return False
+            elif cond['operator'] == op_list[1]:
+                if not (__value <= cond['r_op']):
+                    return False
+            elif cond['operator'] == op_list[2]:
+                if not (__value > cond['r_op']):
+                    return False
+            elif cond['operator'] == op_list[3]:
+                if not (__value >= cond['r_op']):
+                    return False
+            elif cond['operator'] == op_list[4]:
+                if not (__value != cond['r_op']):
+                    return False
+            elif cond['operator'] == op_list[5]:
+                if not (__value == cond['r_op']):
+                    return False
+        return True
 
 
 # done
@@ -322,11 +335,33 @@ def create_index(index_name, table, column):
 
 
 # done
+def print_select(columns_list,columns_list_num):
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in columns_list:
+        if len(str(i)) > 14:
+            output = str(i)[0:14]
+        else:
+            output = str(i)
+        print('|', output.center(15), end='')
+    print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in results:
+        for j in columns_list_num:
+            if len(str(i[j])) > 14:
+                output = str(i[j])[0:14]
+            else:
+                output = str(i[j])
+            print('|', output.center(15), end='')
+        print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    print("Returned %d entries," % len(results), end='')
+
+
 def select_from_table(table_name, attributes, where):
     results = []
     columns = {}
-    for index, col in enumerate(Catalog.tables[table_name].columns):
-        columns[col.column_name] = index
+    for i, col in enumerate(Catalog.tables[table_name].columns):
+        columns[col.column_name] = i
     __primary_key = Catalog.tables[table_name].primary_key
     # __primary_key = 0
     # columns = {'num': 0, 'val': 1}
@@ -356,32 +391,17 @@ def select_from_table(table_name, attributes, where):
                 else:
                     break
 
-    if attributes == ['*']:
+    if attributes[0] == '*':
         __columns_list = list(columns.keys())
         __columns_list_num = list(columns.values())
     else:
-        __columns_list_num = [columns[i] for i in attributes]
-        __columns_list = [i for i in attributes]
+        __columns_list = []
+        __columns_list_num = []
+        for i in range(0,len(attributes)):
+            __columns_list.append(attributes[i])
+            __columns_list_num.append(columns(attributes[i]))
 
-    print('-' * (17 * len(__columns_list_num) + 1))
-    for i in __columns_list:
-        if len(str(i)) > 14:
-            output = str(i)[0:14]
-        else:
-            output = str(i)
-        print('|', output.center(15), end='')
-    print('|')
-    print('-' * (17 * len(__columns_list_num) + 1))
-    for i in results:
-        for j in __columns_list_num:
-            if len(str(i[j])) > 14:
-                output = str(i[j])[0:14]
-            else:
-                output = str(i[j])
-            print('|', output.center(15), end='')
-        print('|')
-    print('-' * (17 * len(__columns_list_num) + 1))
-    print("Returned %d entries," % len(results), end='')
+    print_select(__columns_list,__columns_list_num)
 
 
 # done
@@ -419,8 +439,8 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
     while first_leaf_node.is_leaf != True:
         first_leaf_node = first_leaf_node.pointers[0]
     lists = []
-
-    if __primary_key == column and condition != '<>':
+    op_list = ['<','<=','>','>=','<>','=']
+    if __primary_key == column and condition != op_list[4]:
         while not head_node.is_leaf:
             seed = False
             for index, key in enumerate(head_node.keys):
@@ -430,11 +450,11 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
                     break
             if seed == False:
                 head_node = head_node.pointers[-1]
-        if condition == '=':
+        if condition == op_list[5]:
             for pointer in head_node.pointers[0:-1]:
                 if pointer[column] == value:
                     lists.append(head_node)
-        elif condition == '<=':
+        elif condition == op_list[1]:
             cur_node = first_leaf_node
             while True:
                 if cur_node != head_node:
@@ -446,7 +466,7 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
                 if pointer[column] <= value:
                     lists.append(head_node)
                     break
-        elif condition == '<':
+        elif condition == op_list[0]:
             cur_node = first_leaf_node
             while True:
                 if cur_node != head_node:
@@ -458,7 +478,7 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
                 if pointer[column] < value:
                     lists.append(head_node)
                     break
-        elif condition == '>':
+        elif condition == op_list[2]:
             for pointer in head_node.pointers[0:-1]:
                 if pointer[column] > value:
                     lists.append(head_node)
@@ -469,7 +489,7 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
                     lists.append(head_node)
                 else:
                     break
-        elif condition == '>=':
+        elif condition == op_list[3]:
             for pointer in head_node.pointers[0:-1]:
                 if pointer[column] >= value:
                     lists.append(head_node)
@@ -487,32 +507,33 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
         if first_leaf_node.pointers:
             while True:
                 for pointer in first_leaf_node.pointers[0:-1]:
-                    if condition == '=':
-                        if pointer[column] == value:
-                            lists.append(first_leaf_node)
-                            break
-                    elif condition == '<':
-                        if pointer[column] < value:
-                            lists.append(first_leaf_node)
-                            break
-                    elif condition == '<=':
-                        if pointer[column] <= value:
-                            lists.append(first_leaf_node)
-                            break
-                    elif condition == '>':
-                        if pointer[column] > value:
-                            lists.append(first_leaf_node)
-                            break
-                    elif condition == '>=':
-                        if pointer[column] >= value:
-                            lists.append(first_leaf_node)
-                            break
-                    elif condition == '<>':
-                        if pointer[column] != value:
-                            lists.append(first_leaf_node)
-                            break
-                    else:
+                    if condition not in op_list:
                         raise Exception("Index Module : unsupported op.")
+                    else:
+                        if condition == op_list[0]:
+                            if pointer[column] < value:
+                                lists.append(first_leaf_node)
+                                break
+                        elif condition == op_list[1]:
+                            if pointer[column] <= value:
+                                lists.append(first_leaf_node)
+                                break
+                        elif condition == op_list[2]:
+                            if pointer[column] > value:
+                                lists.append(first_leaf_node)
+                                break
+                        elif condition == op_list[3]:
+                            if pointer[column] >= value:
+                                lists.append(first_leaf_node)
+                                break
+                        elif condition == op_list[4]:
+                            if pointer[column] != value:
+                                lists.append(first_leaf_node)
+                                break
+                        elif condition == op_list[5]:
+                            if pointer[column] == value:
+                                lists.append(first_leaf_node)
+                                break
                 if first_leaf_node.pointers[-1] == '':
                     break
                 first_leaf_node = first_leaf_node.pointers[-1]
@@ -587,37 +608,3 @@ def insert_into_parent(table_name, __node, __key, new_node):
             __new_node.pointers.append(__tmp)
             new_node.parent = __new_node
             insert_into_parent(table_name, p, k__, __new_node)
-
-
-def exist_user(username, password):
-    nodes = find_leaf_place_with_condition('sys', 0, '=', username)
-    for __node in nodes:
-        for ptr in __node.pointers[0:-1]:
-            if ptr[0] == username and ptr[1] == password:
-                return True
-    return False
-
-
-if __name__ == '__main__':
-    __initialize__('/Users/alan/Desktop/CodingLife/Python/miniSQL/')
-    tables['student'] = node(True, [], [])
-    insert_into_table('student', [2, 'we'])
-    insert_into_table('student', [3, 'ke'])
-    insert_into_table('student', [5, 'ww'])
-    insert_into_table('student', [7, 'ww'])
-    insert_into_table('student', [11, 'wl'])
-    insert_into_table('student', [17, 'wl'])
-    insert_into_table('student', [19, 'wl'])
-    insert_into_table('student', [23, 'wl'])
-    insert_into_table('student', [29, 'wl'])
-    insert_into_table('student', [31, 'wl'])
-    insert_into_table('student', [9, 'wl'])
-    insert_into_table('student', [10, 'wl'])
-    insert_into_table('student', [8, 'wl'])
-
-    # delete_from_table('student',['num','=',23])
-    # delete_from_table('student', ['num', '=', 19])
-    # __prints('student')
-    # select_from_table('student','num > 0','*')
-    __store__()
-    pass

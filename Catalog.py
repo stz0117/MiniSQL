@@ -2,22 +2,22 @@ import json
 import os
 import Index
 
-tables = {}#empty dict,to store tables
-catalogpath = ''#path of catalogs folder
-tablecatalog = ''#path of table catalog file
-indexcatalog = ''#path of index catalog file
-indices = {}#empty dict,to store indices
+tables = {}  # empty dict,to store tables
+catalogpath = ''  # path of catalogs folder
+tablecatalog = ''  # path of table catalog file
+indexcatalog = ''  # path of index catalog file
+indices = {}  # empty dict,to store indices
 
 
-class Table():#data structure to save a table
-    def __init__(self, table_name, pk = 0):
+class Table():  # data structure to save a table
+    def __init__(self, table_name, pk=0):
         self.table_name = table_name
         self.primary_key = pk
 
     columns = []
 
 
-class Column():#data structure to save an attribute
+class Column():  # data structure to save an attribute
     def __init__(self, column_name, is_unique, type='char', length=16):
         self.column_name = column_name
         self.is_unique = is_unique
@@ -25,13 +25,13 @@ class Column():#data structure to save an attribute
         self.length = length
 
 
-def __initialize__(__path):#initialize the file of catalog
+def __initialize__(__path):  # initialize the file of catalog
     global catalogpath
     global tablecatalog
     global indexcatalog
     catalogpath = os.path.join(__path, 'dbfiles/catalogs')
-    tablecatalog=os.path.join(catalogpath, 'catalog_table')
-    indexcatalog=os.path.join(catalogpath, 'catalog_index')
+    tablecatalog = os.path.join(catalogpath, 'catalog_table')
+    indexcatalog = os.path.join(catalogpath, 'catalog_index')
 
     if not os.path.exists(catalogpath):
         os.makedirs(catalogpath)
@@ -53,7 +53,6 @@ def __initialize__(__path):#initialize the file of catalog
 
 def __finalize__():
     __savefile__()
-
 
 
 # done
@@ -86,7 +85,6 @@ def drop_table(table_name):
     tables.pop(table_name)
 
 
-
 # done
 def check_types_of_table(table_name, values):
     cur_table = tables[table_name]
@@ -105,7 +103,7 @@ def check_types_of_table(table_name, values):
                                 " can be no longer than %d." % (table_name, element.column_name, element.length))
 
         if element.is_unique:
-            #Index.check_unique(table_name, i, value)
+            # Index.check_unique(table_name, i, value)
             pass
 
 
@@ -169,56 +167,53 @@ def check_select_statement(table_name, attributes, where):
             raise Exception("No column name '%s'." % i)
 
 
-def getcolumndic(table_name:str):
-    result={}
-    cnt=0;
-    global tables;
+def get_column_dic(table_name: str):
+    result = {}
+    cnt = 0
+    global tables
     for fullcol in tables[table_name].columns:
-        colname=fullcol.column_name
-        result[colname]=cnt
-        cnt+=1
-    return  result;
+        colname = fullcol.column_name
+        result[colname] = cnt
+        cnt += 1
+    return result
 
 
-
-
-
-def __loadfile__():#from file to memory
+def __loadfile__():  # from file to memory
     f = open(tablecatalog)
     json_tables = json.loads(f.read())
     for table in json_tables.items():
-        temp_name=table[0]
-        temp_pk=table[1]['pk']
+        temp_name = table[0]
+        temp_pk = table[1]['pk']
         temp_columns = []
 
-        __table = Table(temp_name, temp_pk)#table_name&primary key
+        __table = Table(temp_name, temp_pk)  # table_name&primary key
         for __column in table[1]['columns'].items():
             temp_attname = __column[0]
             temp_isunique = __column[1][0]
             temp_type = __column[1][1]
             temp_len = __column[1][2]
 
-            temp_columns.append(Column(temp_attname,temp_isunique,temp_type,temp_len))
+            temp_columns.append(Column(temp_attname, temp_isunique, temp_type, temp_len))
         __table.columns = temp_columns
 
-        tables[temp_name] = __table#add into the tables dict in memory
+        tables[temp_name] = __table  # add into the tables dict in memory
     f.close()
 
     f = open(indexcatalog)
     json_indices = f.read()
     json_indices = json.loads(json_indices)
     for index in json_indices.items():
-        temp_indexname=index[0]#name of this index
-        temp_index=index[1]#the actual component of this index
+        temp_indexname = index[0]  # name of this index
+        temp_index = index[1]  # the actual component of this index
         indices[temp_indexname] = temp_index
     f.close()
 
 
-def __savefile__():#from memory to file
+def __savefile__():  # from memory to file
     __tables = {}
     for items in tables.items():
         definition = {}
-        temp_name=items[0]
+        temp_name = items[0]
         __columns = {}
         for i in items[1].columns:
             __columns[i.column_name] = [i.is_unique, i.type, i.length]
@@ -236,4 +231,3 @@ def __savefile__():#from memory to file
     f = open(indexcatalog, 'w')
     f.write(j_indices)
     f.close()
-

@@ -8,6 +8,12 @@ delete from S where age = 20;
 delete from S;
 drop table S;
 
+简单版（现在的）
+create table S(a int , b int, primary key (b));
+insert into S values (1, 4);
+insert into S values (2, 5);
+insert into S values (3, 6);
+
 大概想法就是……
 b+树里面只储存  pk : 行数  这对信息，不再存所有的值了
 buffer这边支持通过行数查询、删除，所以通过主键的查询/删除可以通过b+树找到行号，指定查/删某一行
