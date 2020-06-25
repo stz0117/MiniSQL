@@ -74,12 +74,15 @@ def select(table_name: str, attributes: list, where: list = None):
     Catalog.check_select_statement(table_name, attributes, where)
     #Index.select_from_table(table_name, attributes, where)
     coldic=Catalog.getcolumndic(table_name)
+    print(coldic)
     results=Buffer.find_record(table_name,coldic,where)
+    print(results)
     numlist=[]
     for att in attributes:
+        print(att)
         numlist.append(coldic[att])
 
-    print_select(attributes,att,results)
+    print_select(attributes,numlist,results)
 
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
