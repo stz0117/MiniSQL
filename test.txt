@@ -8,6 +8,20 @@ delete from S where age = 20;
 delete from S;
 drop table S;
 
-大概想法是……
-b+树里面只储存  pk : 行数  这对信息
-buffer这边支持通过行数查询、删除，所以有主键的查询就是
+大概想法就是……
+b+树里面只储存  pk : 行数  这对信息，不再存所有的值了
+buffer这边支持通过行数查询、删除，所以通过主键的查询/删除可以通过b+树找到行号，指定查/删某一行
+如果条件没有主键或者除了主键还有别的，可以使用 _record 系列的函数，就是普通的带条件查找
+
+为了维护b+树，有的函数是返回一些信息的
+比如insert_record会返回记录插到了哪一行，这样才能往b+树里面存 pk : 行数
+delete_record就会告诉你删了的记录对应的主键，之后就能在b+树里面把他们删了
+_line系列的函数是建立在已经从b+树查到行数的基础上的，所以不需要返回行数的信息
+
+具体buffer里面怎么写的倒是不用太管x  主要是index那边的实现需要利用这几个新的函数
+都列出来 可能这样好查一些
+find_line(table_name: str, line_number: int)                返回找到的记录（一个列表） 例：[201801005, 'zyx', 20, 'M']
+find_record(table_name: str, columns: dict, where: list)    返回找到的记录（列表的列表）
+delete_line(table_name: str, line_number: int)              无返回值
+delete_record(table_name: str, column: dict, where: list)   返回删除记录的主键（列表）
+insert_record(table_name: str, record: [])                  返回该条记录的行数（int），以便在b+树里储存
