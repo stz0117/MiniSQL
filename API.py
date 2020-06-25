@@ -1,6 +1,7 @@
 import Catalog
 import Index
 import time
+import Buffer
 
 
 # import RecordManager
@@ -9,11 +10,13 @@ import time
 def initialize(path: str):
     Catalog.__initialize__(path)
     Index.__initialize__(path)
+    Buffer.__initialize__()
 
 
 def save():
     Catalog.__finalize__()
     Index.__finalize__()
+    Buffer.__finalize__()
     print("All tables have been saved.")
 
 
@@ -27,8 +30,9 @@ def save():
 def create_table(table_name: str, attributes: list, pk: str):
     time_start = time.time()
     Catalog.exists_table(table_name)
-    Index.create_table(table_name)
+    #Index.create_table(table_name)
     Catalog.create_table(table_name, attributes, pk)
+    Buffer.create_table(table_name)
     time_end = time.time()
     print("Successfully create table '%s', time elapsed : %fs." %
           (table_name, time_end - time_start))
@@ -46,7 +50,8 @@ def drop_table(table_name: str):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.drop_table(table_name)
-    Index.delete_table(table_name)
+    Buffer.drop_table(table_name)
+    #Index.delete_table(table_name)
     time_end = time.time()
     print("Successfully drop table '%s', time elapsed : %fs." %
           (table_name, time_end - time_start))
@@ -67,17 +72,49 @@ def select(table_name: str, attributes: list, where: list = None):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_select_statement(table_name, attributes, where)
-    Index.select_from_table(table_name, attributes, where)
+    #Index.select_from_table(table_name, attributes, where)
+    coldic=Catalog.getcolumndic(table_name)
+    print(coldic)
+    results=Buffer.find_record(table_name,coldic,where)
+    print(results)
+    numlist=[]
+    for att in attributes:
+        print(att)
+        numlist.append(coldic[att])
+
+    print_select(attributes,numlist,results)
+
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
 
+def print_select(columns_list,columns_list_num,results):
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in columns_list:
+        if len(str(i)) > 14:
+            output = str(i)[0:14]
+        else:
+            output = str(i)
+        print('|', output.center(15), end='')
+    print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in results:
+        for j in columns_list_num:
+            if len(str(i[j])) > 14:
+                output = str(i[j])[0:14]
+            else:
+                output = str(i[j])
+            print('|', output.center(15), end='')
+        print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    print("Returned %d entries," % len(results), end='')
 
 # e.g. student ['12345678', 'wy', 22, 'M']
 def insert(table_name: str, values: list):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_types_of_table(table_name, values)
-    Index.insert_into_table(table_name, values)
+    #Index.insert_into_table(table_name, values)
+    Buffer.insert_record(table_name,values)
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
 
@@ -87,7 +124,9 @@ def delete(table_name: str, where: list = None):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_select_statement(table_name, ['*'], where)  # 从insert中借用的方法
-    Index.delete_from_table(table_name, where)
+    #Index.delete_from_table(table_name, where)
+    col=Catalog.getcolumndic(table_name)
+    Buffer.delete_record(table_name,col,where)
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
 
