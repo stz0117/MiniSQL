@@ -1,6 +1,7 @@
 import struct
 import os
-
+import Catalog
+import Index
 # from Catalog import tables
 
 # For the convenience of test and presentation, the buffer size is set to a small, static number.
@@ -11,6 +12,7 @@ BUFFER_NUM = 2  # for each table
 
 
 # ---------------------- for easy internal test --------------------------
+'''
 class Table(object):  # data structure to save a table
     def __init__(self, table_name, pk=0):
         self.table_name = table_name
@@ -35,7 +37,7 @@ tables['S'].columns = [
     Column('age', False, 'int', 0),
     Column('gender', False, 'char', 1)
 ]
-
+'''
 # ---------------------------------------------------------------------
 
 buffers = {}  # key: name, value: buffer of this table
@@ -51,7 +53,7 @@ class Buffer(object):
         self.line_size = 1  # we have a flag of 1 byte indicating record (0x00) or pointer (0x01)
 
         # get the format char to support pack and unpack
-        for column in tables[table_name].columns:
+        for column in Catalog.tables[table_name].columns:
             if column.type == 'int':
                 self.format_list += ['i']
                 self.line_size += 4
@@ -99,7 +101,7 @@ class Buffer(object):
         f.close()
 
     def save(self):
-        f = open(f'dbfiles/table_files/table_{self.table_name}.bin', 'rb+')
+        f = open(f'dbfiles/table_files/table_{self.table_name}.bin', 'wb+')
         f.seek(self.file_line * self.line_size)
         for line in self.content:
             f.write(line)
@@ -118,8 +120,13 @@ class Buffer(object):
 
 def __initialize__():
     global buffers
-    for table in tables.values():
+
+    if not os.path.exists(f'dbfiles/table_files'):
+        os.makedirs(f'dbfiles/table_files')
+
+    for table in Catalog.tables.values():
         buffers[table.table_name] = Buffer(table.table_name)
+
 
 
 def __finalize__():
@@ -166,7 +173,7 @@ def decode(format_str: str, line: bytes):
 def find_attr_pos(table_name: str, attribute: str):
     global tables
     pos = -1
-    for i, col in enumerate(tables[table_name].columns):
+    for i, col in enumerate(Catalog.tables[table_name].columns):
         if col.column_name == attribute:
             pos = i
     return pos
@@ -247,7 +254,7 @@ def delete_line(table_name: str, line_number: int):
 
 
 def delete_record(table_name: str, column: dict, where: list):
-    pk_pos = tables[table_name].primary_key
+    pk_pos = Catalog.tables[table_name].primary_key
     # first search in the buffer
     global buffers
     buffer = buffers[table_name]
@@ -297,7 +304,7 @@ def delete_record(table_name: str, column: dict, where: list):
 
 def check_unique(table_name: str, line_size: int, line: bytes):
     global tables, buffers
-    table = tables[table_name]
+    table = Catalog.tables[table_name]
     buffer = buffers[table_name]
     buffer_range = range(buffer.file_line, buffer.file_line + buffer.cur_size)
     unique = []
@@ -371,8 +378,9 @@ def insert_record(table_name: str, record: []):
 def create_table(table_name: str):
     global tables
     f = open(f'dbfiles/table_files/table_{table_name}.bin', 'wb')
+
     line_size = 1
-    for column in tables[table_name].columns:
+    for column in Catalog.tables[table_name].columns:
         if column.type == 'int':
             line_size += 4
         elif column.type == 'float':
@@ -401,7 +409,7 @@ def pin_buffer(table_name: str):
 def unpin_buffer(table_name: str):
     buffers[table_name].pin = False
 
-
+'''
 __initialize__()
 # a = find_line('S', 5)
 # print(a)
@@ -415,6 +423,33 @@ where = [{'operator': '=', 'l_op': 'gender', 'r_op': 'F'}, {'operator': '<', 'l_
 #     print(rec)
 
 # delete_line('S', 5)
+a=['ID','d','d','v']
+b=[0,1,2,3]
+results=find_record('S', column, where)
+
+def print_select(columns_list,columns_list_num):
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in columns_list:
+        if len(str(i)) > 14:
+            output = str(i)[0:14]
+        else:
+            output = str(i)
+        print('|', output.center(15), end='')
+    print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    for i in results:
+        for j in columns_list_num:
+            if len(str(i[j])) > 14:
+                output = str(i[j])[0:14]
+            else:
+                output = str(i[j])
+            print('|', output.center(15), end='')
+        print('|')
+    print('-' * (17 * len(columns_list_num) + 1))
+    print("Returned %d entries," % len(results), end='')
+
+
+print_select(a,b)
 
 # print(delete_record('S', column, where))
 
@@ -425,3 +460,5 @@ where = [{'operator': '=', 'l_op': 'gender', 'r_op': 'F'}, {'operator': '<', 'l_
 # # drop_table('S')
 __finalize__()
 print('123')
+print(results.__len__())
+'''

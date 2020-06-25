@@ -41,12 +41,12 @@ def __initialize__(__path):#initialize the file of catalog
         f1.close()
         f2.close()
 
-        tables['sys'] = Table('sys', 0)
+        '''tables['sys'] = Table('sys', 0)
         indices['sys_default_index'] = {'table': 'sys', 'column': 'attribute1'}
         columns = []
         columns.append(Column('attribute1', True))
         columns.append(Column('attribute2', False))
-        tables['sys'].columns = columns
+        tables['sys'].columns = columns'''
         __savefile__()
     __loadfile__()
 
@@ -166,6 +166,19 @@ def check_select_statement(table_name, attributes, where):
     for i in attributes:
         if i not in columns:
             raise Exception("No column name '%s'." % i)
+
+
+def getcolumndic(table_name:str):
+    result={}
+    cnt=0;
+    global tables;
+    for fullcol in tables[table_name].columns:
+        colname=fullcol.column_name
+        result[cnt]=colname
+        cnt+=1
+    return  result;
+
+
 
 
 
