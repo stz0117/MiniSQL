@@ -11,8 +11,9 @@ __last_leaf_pointer = ''
 
 
 class node():
-    def __init__(self, isleaf, keys0, pointers0, parent0=''):
+    def __init__(self, isleaf, line0, keys0, pointers0, parent0=''):
         self.is_leaf = isleaf
+        self.line = line0
         self.keys = keys0
         self.pointers = pointers0
         self.parent = parent0
@@ -20,11 +21,11 @@ class node():
 
 def __initialize__(__path):
     global recordpath
-    recordpath = os.path.join(__path, 'dbfiles/records')
+    recordpath = os.path.join(__path, 'dbfiles/indices')
 
     if not os.path.exists(recordpath):
         os.makedirs(recordpath)
-        tables['sys'] = node(True, ['key0'], [['key0', 'key1'], ''])
+        tables['sys'] = node(True, [], ['key0'], [['key0', 'key1'], ''])
         __store__()
 
     __load__()
@@ -36,17 +37,17 @@ def __finalize__():
 #def __init__(self, isleaf, keys0, pointers0, parent0=''):
 def __load__():
     global __last_leaf_pointer
-    f = open(os.path.join(recordpath, 'recordfile'))
+    f = open(os.path.join(recordpath, 'indexfile'))
     json_tables = json.loads(f.read())
     f.close()
     for table in json_tables.items():
         temp_name = table[0]
         temp_content = table[1]
         if len(temp_content['keys']) == 0:
-            tables[temp_name] = node(True, [], [])
+            tables[temp_name] = node(True, 0, [], [])
             continue
         tables[temp_name] = \
-            node(temp_content['is_leaf'],temp_content['keys'], temp_content['pointers'], '')
+            node(temp_content['is_leaf'],temp_content['line'],temp_content['keys'], temp_content['pointers'], '')
         if tables[temp_name].is_leaf:
             continue
 
@@ -60,7 +61,7 @@ def load_nodes(pointer_list, parent):
     for pointer in pointer_list:
 
         if pointer['is_leaf']:
-            new_node = node(pointer['is_leaf'], pointer['keys'], pointer['pointers'], parent)
+            new_node = node(pointer['is_leaf'], pointer['line'],pointer['keys'], pointer['pointers'], parent)
             nodelist.append(new_node)
             if __last_leaf_pointer == '':
                 __last_leaf_pointer = new_node
@@ -68,11 +69,10 @@ def load_nodes(pointer_list, parent):
                 __last_leaf_pointer.pointers.append(new_node)
                 __last_leaf_pointer = new_node
         else:
-            new_node = node(pointer['is_leaf'], pointer['keys'], pointer['pointers'], parent)
+            new_node = node(pointer['is_leaf'], pointer['line'],pointer['keys'], pointer['pointers'], parent)
             nodelist.append(new_node)
             new_node.pointers = load_nodes(pointer['pointers'], nodelist[-1])
     return nodelist
-
 
 def __store__():
     global recordpath
@@ -80,7 +80,7 @@ def __store__():
     for table in tables.items():
         __tables[table[0]] = recursive_store_node(table[1])
 
-    f = open(os.path.join(recordpath, 'recordfile'), 'w')
+    f = open(os.path.join(recordpath, 'indexfile'), 'w')
     json_tables = json.dumps(__tables)
     f.write(json_tables)
     f.close()
@@ -89,7 +89,9 @@ def __store__():
 def recursive_store_node(node):
     cur_node = {}
     cur_node['is_leaf'] = node.is_leaf
+    cur_node['line'] = node.line
     cur_node['keys'] = node.keys
+    cur_node['line'] = node.line
     if node.is_leaf == True and node.pointers == []:
         pass
     elif node.is_leaf == True and node.pointers[-1] != '':
@@ -125,14 +127,15 @@ def __do_print(node):
 '''
 
 # done
-def insert_into_table(table_name, __values):
+def insert_into_table(table_name, __values,line_number:int):
+    '''
     for i, col in enumerate(Catalog.tables[table_name].columns):
         if col.type == 'int':
             __values[i] = int(__values[i])
         elif col.type == 'char':
             __values[i] = str(__values[i])
         elif col.type == 'float':
-            __values[i] = float(__values[i])
+            __values[i] = float(__values[i])'''
 
     cur_node = tables[table_name]
     __primary_key = Catalog.tables[table_name].primary_key
@@ -140,18 +143,18 @@ def insert_into_table(table_name, __values):
     if len(cur_node.keys) == 0:
         # new tree
         cur_node.keys.append(__values[__primary_key])
-        cur_node.pointers.append(__values)
+        cur_node.pointers.append([__values[__primary_key]]+[line_number])
         cur_node.pointers.append('')
         print('Successfully insert into table %s,' % table_name, end='')
         return
-    
+
     cur_node = find_leaf_place(table_name, __values[__primary_key])
     if len(cur_node.keys) < N - 1:
-        insert_into_leaf(cur_node, __values[__primary_key], __values)
+        insert_into_leaf(cur_node, __values[__primary_key], [__values[__primary_key]]+[line_number])
 
     else:
-        insert_into_leaf(cur_node, __values[__primary_key], __values)
-        new_node = node(True, [], [])
+        insert_into_leaf(cur_node, __values[__primary_key], [__values[__primary_key]]+[line_number])
+        new_node = node(True, [],[], [])
         tmp_keys = cur_node.keys
         tmp_pointers = cur_node.pointers
         cur_node.keys = []
@@ -171,7 +174,7 @@ def insert_into_table(table_name, __values):
 
 # done
 def create_table(table_name):
-    tables[table_name] = node(True, [], [])
+    tables[table_name] = node(True,[], [], [])
 
 
 # done
@@ -184,7 +187,7 @@ def delete_from_table(table_name, where):
     # delete rows from table according to the statement's condition
     # usage : find_leaf_place_with_condition(table, column, condition, value)
     if where is None:
-        tables[table_name] = node(True, [], [])
+        tables[table_name] = node(True, [],[], [])
         print("Successfully delete all entrys from table '%s'," % table_name, end='')
     else:
         columns = {}

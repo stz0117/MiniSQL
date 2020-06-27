@@ -30,7 +30,7 @@ def save():
 def create_table(table_name: str, attributes: list, pk: str):
     time_start = time.time()
     Catalog.exists_table(table_name)
-    # Index.create_table(table_name)
+    Index.create_table(table_name)
     Catalog.create_table(table_name, attributes, pk)
     Buffer.create_table(table_name)
     time_end = time.time()
@@ -72,7 +72,7 @@ def select(table_name: str, attributes: list, where: list = None):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_select_statement(table_name, attributes, where)
-    # Index.select_from_table(table_name, attributes, where)
+    #Index.select_from_table(table_name, attributes, where)
     col_dic = Catalog.get_column_dic(table_name)
     print(col_dic)
     results = Buffer.find_record(table_name, col_dic, where)
@@ -118,8 +118,8 @@ def insert(table_name: str, values: list):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_types_of_table(table_name, values)
-    # Index.insert_into_table(table_name, values)
-    Buffer.insert_record(table_name, values)
+    linenum =Buffer.insert_record(table_name, values)
+    Index.insert_into_table(table_name, values,linenum)
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
 
