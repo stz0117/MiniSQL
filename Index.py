@@ -37,6 +37,7 @@ def __finalize__():
 #def __init__(self, isleaf, keys0, pointers0, parent0=''):
 def __load__():
     global __last_leaf_pointer
+    print(recordpath)
     f = open(os.path.join(recordpath, 'indexfile'))
     json_tables = json.loads(f.read())
     f.close()
@@ -559,7 +560,7 @@ def insert_into_leaf(cur_node, value, pointer):
 # done
 def insert_into_parent(table_name, __node, __key, new_node):
     if __node.parent == '':
-        cur_node = node(False, [], [], '')
+        cur_node = node(False, [], [],[], '')
         cur_node.pointers.append(__node)
         cur_node.pointers.append(new_node)
         cur_node.keys.append(__key)
@@ -591,7 +592,7 @@ def insert_into_parent(table_name, __node, __key, new_node):
             if seed == False:
                 p.keys.append(__key)
                 p.pointers.append(new_node)
-            __new_node = node(False, [], [])
+            __new_node = node(False, [], [],[])
             tmp_keys = p.keys
             tmp_pointers = p.pointers
             p.keys = []
