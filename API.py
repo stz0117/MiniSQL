@@ -51,7 +51,7 @@ def drop_table(table_name: str):
     Catalog.not_exists_table(table_name)
     Catalog.drop_table(table_name)
     Buffer.drop_table(table_name)
-    # Index.delete_table(table_name)
+    Index.delete_table(table_name)
     time_end = time.time()
     print("Successfully drop table '%s', time elapsed : %fs." %
           (table_name, time_end - time_start))
@@ -129,9 +129,9 @@ def delete(table_name: str, where: list = None):
     time_start = time.time()
     Catalog.not_exists_table(table_name)
     Catalog.check_select_statement(table_name, ['*'], where)  # 从insert中借用的方法
-    # Index.delete_from_table(table_name, where)
     col = Catalog.get_column_dic(table_name)
-    Buffer.delete_record(table_name, col, where)
+    pklist=Buffer.delete_record(table_name, col, where)
+    Index.delete_from_table(table_name, pklist)
     time_end = time.time()
     print(" time elapsed : %fs." % (time_end - time_start))
 

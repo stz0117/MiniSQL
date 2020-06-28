@@ -129,7 +129,7 @@ def __do_print(node):
 
 # done
 def insert_into_table(table_name, __values,line_number:int):
-    '''
+    '''['12345678', 'wy', 22, 'M']
     for i, col in enumerate(Catalog.tables[table_name].columns):
         if col.type == 'int':
             __values[i] = int(__values[i])
@@ -184,9 +184,14 @@ def delete_table(table_name):
 
 
 # done
-def delete_from_table(table_name, where):
+def delete_from_table(table_name, pk):
     # delete rows from table according to the statement's condition
     # usage : find_leaf_place_with_condition(table, column, condition, value)
+    #[{'operator': '=', 'l_op': 'sno', 'r_op': '88888888'}]
+    '''
+    print(Catalog.tables[table_name].primary_key)
+    print("pk printed")
+    where = [{'operator': '=', 'l_op': Catalog.tables[table_name].primary_key, 'r_op': '88888888'}]
     if where is None:
         tables[table_name] = node(True, [],[], [])
         print("Successfully delete all entrys from table '%s'," % table_name, end='')
@@ -196,33 +201,35 @@ def delete_from_table(table_name, where):
             columns[col.column_name] = index
         __primary_key = Catalog.tables[table_name].primary_key
         # __primary_key = 0
-        # columns = {'num':0,'val':1}
+        # columns = {'num':0,'val':1}'''
+    print(pk)
+    print("pk printed")
+    times = 0
+    for eachpk in pk:
+        #nodes = find_leaf_place_with_condition(table_name, columns[where[0]['l_op']], where[0]['operator'], where[0]['r_op'])
+        nodes = find_leaf_place(table_name,eachpk)
 
-        times = 0
-        while True:
-            nodes = find_leaf_place_with_condition(table_name, columns[where[0]['l_op']], where[0]['operator'], where[0]['r_op'])
-            for cond in where:
-                if columns[cond['l_op']] == __primary_key:
-                    nodes = find_leaf_place_with_condition(table_name, columns[cond['l_op']], cond['operator'], cond['r_op'])
-                    break
 
-            if len(nodes) == 0:
-                break
-            seed = False
-            for __node in nodes:
-                if seed == True:
-                    break
-                for index, leaf in enumerate(__node.pointers[0:-1]):
-                    if check_conditions(leaf, columns, where):
-                        __node.pointers.pop(index)
-                        __node.keys.pop(index)
-                        maintain_B_plus_tree_after_delete(table_name, __node)
-                        times = times + 1
-                        seed = True
-                        break
-            if seed == False:
-                break
-        print("Successfully delete %d entry(s) from table '%s'," % (times, table_name), end='')
+        #if len(nodes) == 0:
+         #   break
+        seed = False
+        #for __node in nodes:
+
+           # if seed == True:
+               # break
+        __node=nodes;
+        for index, leaf in enumerate(__node.pointers[0:-1]):
+            #if check_conditions(leaf, columns, where):
+            if(leaf[0]==eachpk):
+                __node.pointers.pop(index)
+                __node.keys.pop(index)
+                maintain_B_plus_tree_after_delete(table_name, __node)
+                times = times + 1
+               # seed = True
+               # break
+        #if seed == False:
+           # break
+    print("Index:Successfully deleted")
 
 
 # done
@@ -265,7 +272,7 @@ def maintain_B_plus_tree_after_delete(table, __node):
           (len(__node.keys) < math.ceil((N - 1) / 2) and __node.is_leaf == True)) \
             and __node.parent != '':
         previous = False
-        other_node = node(True, [], [])
+        other_node = node(True,[], [], [])
         K = ''
         __index = 0
         for index, i in enumerate(__node.parent.pointers):
@@ -435,7 +442,7 @@ def find_leaf_place(table, value):
 
 
 # done
-def find_leaf_place_with_condition(table_name, column, condition, value):
+def find_leaf_place_with_condition(table_name , value):
     # __primary_key = CatalogManager.catalog.tables[table].primary_key
     __primary_key = 0
     head_node = tables[table_name]
@@ -443,104 +450,23 @@ def find_leaf_place_with_condition(table_name, column, condition, value):
     while first_leaf_node.is_leaf != True:
         first_leaf_node = first_leaf_node.pointers[0]
     lists = []
-    op_list = ['<','<=','>','>=','<>','=']
-    if __primary_key == column and condition != op_list[4]:
-        while not head_node.is_leaf:
-            seed = False
-            for index, key in enumerate(head_node.keys):
-                if key > value:
-                    head_node = head_node.pointers[index]
-                    seed = True
-                    break
-            if seed == False:
-                head_node = head_node.pointers[-1]
-        if condition == op_list[5]:
-            for pointer in head_node.pointers[0:-1]:
-                if pointer[column] == value:
-                    lists.append(head_node)
-        elif condition == op_list[1]:
-            cur_node = first_leaf_node
-            while True:
-                if cur_node != head_node:
-                    lists.append(cur_node)
-                    cur_node = cur_node.pointers[-1]
-                else:
-                    break
-            for pointer in head_node.pointers[0:-1]:
-                if pointer[column] <= value:
-                    lists.append(head_node)
-                    break
-        elif condition == op_list[0]:
-            cur_node = first_leaf_node
-            while True:
-                if cur_node != head_node:
-                    lists.append(cur_node)
-                    cur_node = cur_node.pointers[-1]
-                else:
-                    break
-            for pointer in head_node.pointers[0:-1]:
-                if pointer[column] < value:
-                    lists.append(head_node)
-                    break
-        elif condition == op_list[2]:
-            for pointer in head_node.pointers[0:-1]:
-                if pointer[column] > value:
-                    lists.append(head_node)
-                    break
-            while True:
-                head_node = head_node.pointers[-1]
-                if head_node != '':
-                    lists.append(head_node)
-                else:
-                    break
-        elif condition == op_list[3]:
-            for pointer in head_node.pointers[0:-1]:
-                if pointer[column] >= value:
-                    lists.append(head_node)
-                    break
-            while True:
-                head_node = head_node.pointers[-1]
-                if head_node != '':
-                    lists.append(head_node)
-                else:
-                    break
-        else:
-            raise Exception("Index Module : unsupported op.")
+    #op_list = ['<','<=','>','>=','<>','=']
+    #if __primary_key == column and condition != op_list[4]:
+    while not head_node.is_leaf:
+        seed = False
+        for index, key in enumerate(head_node.keys):
+            if key > value:
+                head_node = head_node.pointers[index]
+                seed = True
+                break
+        if seed == False:
+            head_node = head_node.pointers[-1]
 
-    else:
-        if first_leaf_node.pointers:
-            while True:
-                for pointer in first_leaf_node.pointers[0:-1]:
-                    if condition not in op_list:
-                        raise Exception("Index Module : unsupported op.")
-                    else:
-                        if condition == op_list[0]:
-                            if pointer[column] < value:
-                                lists.append(first_leaf_node)
-                                break
-                        elif condition == op_list[1]:
-                            if pointer[column] <= value:
-                                lists.append(first_leaf_node)
-                                break
-                        elif condition == op_list[2]:
-                            if pointer[column] > value:
-                                lists.append(first_leaf_node)
-                                break
-                        elif condition == op_list[3]:
-                            if pointer[column] >= value:
-                                lists.append(first_leaf_node)
-                                break
-                        elif condition == op_list[4]:
-                            if pointer[column] != value:
-                                lists.append(first_leaf_node)
-                                break
-                        elif condition == op_list[5]:
-                            if pointer[column] == value:
-                                lists.append(first_leaf_node)
-                                break
-                if first_leaf_node.pointers[-1] == '':
-                    break
-                first_leaf_node = first_leaf_node.pointers[-1]
+
+    for pointer in head_node.pointers[0:-1]:
+         if pointer[0] == value:
+            lists.append(head_node)
+
     return lists
 
 
