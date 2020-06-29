@@ -342,6 +342,11 @@ class Interpreter(Cmd):
         print('Bye~')
         return True
 
+    def do_quit(self, arg: str):
+        API.save()
+        print('Bye~')
+        return True
+
     def emptyline(self):
         pass
 
