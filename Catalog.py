@@ -55,6 +55,23 @@ def __finalize__():
     __savefile__()
 
 
+def show_tables():
+    for table in list(tables.values()):
+        print(table.table_name)
+
+
+def show_table(table_name: str):
+    global tables
+    table = tables[table_name]
+    for column in table.columns:
+        print(f"column name:{column.column_name}\t"
+              f"is unique:{column.is_unique}\t"
+              f"type:{column.type}\t", end='')
+        if (column.type == 'char'):
+            print(f"length:{column.length}", end='')
+        print('')
+
+
 # done
 def create_table(table_name, attributes, pk):
     global tables

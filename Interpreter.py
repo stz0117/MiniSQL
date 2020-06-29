@@ -120,7 +120,7 @@ def create(arg: str):
         location_rbracket = arg.find(')')
         if location_rbracket == -1:
             raise Exception(f"Indexed attribute format is wrong.")
-        indexed_attr = arg[location_lbracket+1: location_rbracket].strip()
+        indexed_attr = arg[location_lbracket + 1: location_rbracket].strip()
 
         if ',' in indexed_attr:
             raise Exception('Only single attribute index is supported.')
@@ -157,12 +157,12 @@ def select(arg: str):
 
     location_where = arg.find('where')
     if location_where == -1:
-        table_name = arg[location_from+len('from'):].strip()
+        table_name = arg[location_from + len('from'):].strip()
         print(table_name, attributes)
         API.select(table_name, attributes)
     else:
-        table_name = arg[location_from+len('from'):location_where].strip()
-        conditions = arg[location_where+len('where'):].strip().split('and')
+        table_name = arg[location_from + len('from'):location_where].strip()
+        conditions = arg[location_where + len('where'):].strip().split('and')
         conditions = list(map(str.strip, conditions))
         where = []
         for condition in conditions:
@@ -196,11 +196,11 @@ def insert(arg: str):
     if location_values == -1:
         raise Exception("'values' is missing.")
 
-    table_name = arg[location_into+4: location_values].strip()
+    table_name = arg[location_into + 4: location_values].strip()
 
     location_lbracket = arg.find('(')
     location_rbracket = arg.find(')')
-    values = arg[location_lbracket+1: location_rbracket].split(',')
+    values = arg[location_lbracket + 1: location_rbracket].split(',')
     values = list(map(str.strip, values))
     values = list(map(auto_type, values))
     print(table_name, values)
@@ -217,12 +217,12 @@ def delete(arg: str):
 
     location_where = arg.find('where')
     if location_where == -1:
-        table_name = arg[location_from+4:].strip()
+        table_name = arg[location_from + 4:].strip()
         print(table_name)
         API.delete(table_name)
     else:
-        table_name = arg[location_from+4: location_where].strip()
-        conditions = arg[location_where+len('where'):].strip().split('and')
+        table_name = arg[location_from + 4: location_where].strip()
+        conditions = arg[location_where + len('where'):].strip().split('and')
         conditions = list(map(str.strip, conditions))
         where = []
         for condition in conditions:
@@ -254,12 +254,12 @@ def show(arg: str):
         if location_table == -1:
             raise Exception(f"The item you want to show is not supported.")
         else:
-            table_name = arg[location_table+5:].strip()
+            table_name = arg[location_table + 5:].strip()
             print(table_name)
             API.show_table(table_name)
     else:
-        pass
         API.show_tables()
+
 
 class Interpreter(Cmd):
     prompt = "MiniSQL> "
@@ -310,8 +310,7 @@ class Interpreter(Cmd):
     def do_commit(self, arg: str):
         API.save()
 
-
-    def do_exefile(self, arg: str):
+    def do_execfile(self, arg: str):
         switch = {
             'create': create,
             'drop': drop,
@@ -327,6 +326,9 @@ class Interpreter(Cmd):
                 line = f.readline().strip()
                 if line == '':
                     break
+                if line[0] == '#':
+                    i += 1
+                    continue
                 command = line[:line.find(' ')]
                 arg = line[line.find(' '):]
                 switch[command](arg)
@@ -334,7 +336,6 @@ class Interpreter(Cmd):
         except Exception as e:
             print(f"An exception occurred at line {i}:")
             print(e)
-        pass
 
     def do_exit(self, arg: str):
         API.save()

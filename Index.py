@@ -217,7 +217,7 @@ def delete_from_table(table_name, pk):
 
            # if seed == True:
                # break
-        __node=nodes;
+        __node=nodes
         for index, leaf in enumerate(__node.pointers[0:-1]):
             #if check_conditions(leaf, columns, where):
             if(leaf[0]==eachpk):
@@ -345,84 +345,84 @@ def create_index(index_name, table, column):
     pass
 
 
-# done
-def print_select(columns_list,columns_list_num):
-    print('-' * (17 * len(columns_list_num) + 1))
-    for i in columns_list:
-        if len(str(i)) > 14:
-            output = str(i)[0:14]
-        else:
-            output = str(i)
-        print('|', output.center(15), end='')
-    print('|')
-    print('-' * (17 * len(columns_list_num) + 1))
-    for i in results:
-        for j in columns_list_num:
-            if len(str(i[j])) > 14:
-                output = str(i[j])[0:14]
-            else:
-                output = str(i[j])
-            print('|', output.center(15), end='')
-        print('|')
-    print('-' * (17 * len(columns_list_num) + 1))
-    print("Returned %d entries," % len(results), end='')
-
-
-def select_from_table(table_name, attributes, where):
-    results = []
-    columns = {}
-    for i, col in enumerate(Catalog.tables[table_name].columns):
-        columns[col.column_name] = i
-    __primary_key = Catalog.tables[table_name].primary_key
-    # __primary_key = 0
-    # columns = {'num': 0, 'val': 1}
-
-    if len(tables[table_name].keys) == 0:
-        pass
-    else:
-        if where is not None:
-            nodes = find_leaf_place_with_condition(table_name, columns[where[0]['l_op']], where[0]['operator'], where[0]['r_op'])
-            for cond in where:
-                if columns[cond['l_op']] == __primary_key:
-                    nodes = find_leaf_place_with_condition(table_name, columns[cond['l_op']], cond['operator'], cond['r_op'])
-                    break
-            for __node in nodes:
-                for pointer in __node.pointers[0:-1]:
-                    if check_conditions(pointer, columns, where):
-                        results.append(pointer)
-        else:
-            first_leaf_node = tables[table_name]
-            while first_leaf_node.is_leaf != True:
-                first_leaf_node = first_leaf_node.pointers[0]
-            while True:
-                for i in first_leaf_node.pointers[0:-1]:
-                    results.append(i)
-                if first_leaf_node.pointers[-1] != '':
-                    first_leaf_node = first_leaf_node.pointers[-1]
-                else:
-                    break
-
-    if attributes[0] == '*':
-        __columns_list = list(columns.keys())
-        __columns_list_num = list(columns.values())
-    else:
-        __columns_list = []
-        __columns_list_num = []
-        for i in range(0,len(attributes)):
-            __columns_list.append(attributes[i])
-            __columns_list_num.append(columns(attributes[i]))
-
-    print_select(__columns_list,__columns_list_num)
-
-
-# done
-def check_unique(table_name, column, value):
-    columns = []
-    for col in Catalog.tables[table_name].columns:
-        columns.append(col)
-    if len(find_leaf_place_with_condition(table_name, column, '=', value)):
-        raise Exception("Index Module : column '%s' does not satisfy "
-                        "unique constrains." % columns[column])
+# # Used in deprecated function
+# def print_select(columns_list,columns_list_num):
+#     print('-' * (17 * len(columns_list_num) + 1))
+#     for i in columns_list:
+#         if len(str(i)) > 14:
+#             output = str(i)[0:14]
+#         else:
+#             output = str(i)
+#         print('|', output.center(15), end='')
+#     print('|')
+#     print('-' * (17 * len(columns_list_num) + 1))
+#     for i in results:
+#         for j in columns_list_num:
+#             if len(str(i[j])) > 14:
+#                 output = str(i[j])[0:14]
+#             else:
+#                 output = str(i[j])
+#             print('|', output.center(15), end='')
+#         print('|')
+#     print('-' * (17 * len(columns_list_num) + 1))
+#     print("Returned %d entries," % len(results), end='')
+#
+# # Deprecated
+# def select_from_table(table_name, attributes, where):
+#     results = []
+#     columns = {}
+#     for i, col in enumerate(Catalog.tables[table_name].columns):
+#         columns[col.column_name] = i
+#     __primary_key = Catalog.tables[table_name].primary_key
+#     # __primary_key = 0
+#     # columns = {'num': 0, 'val': 1}
+#
+#     if len(tables[table_name].keys) == 0:
+#         pass
+#     else:
+#         if where is not None:
+#             nodes = find_leaf_place_with_condition(table_name, columns[where[0]['l_op']], where[0]['operator'], where[0]['r_op'])
+#             for cond in where:
+#                 if columns[cond['l_op']] == __primary_key:
+#                     nodes = find_leaf_place_with_condition(table_name, columns[cond['l_op']], cond['operator'], cond['r_op'])
+#                     break
+#             for __node in nodes:
+#                 for pointer in __node.pointers[0:-1]:
+#                     if check_conditions(pointer, columns, where):
+#                         results.append(pointer)
+#         else:
+#             first_leaf_node = tables[table_name]
+#             while first_leaf_node.is_leaf != True:
+#                 first_leaf_node = first_leaf_node.pointers[0]
+#             while True:
+#                 for i in first_leaf_node.pointers[0:-1]:
+#                     results.append(i)
+#                 if first_leaf_node.pointers[-1] != '':
+#                     first_leaf_node = first_leaf_node.pointers[-1]
+#                 else:
+#                     break
+#
+#     if attributes[0] == '*':
+#         __columns_list = list(columns.keys())
+#         __columns_list_num = list(columns.values())
+#     else:
+#         __columns_list = []
+#         __columns_list_num = []
+#         for i in range(0,len(attributes)):
+#             __columns_list.append(attributes[i])
+#             __columns_list_num.append(columns(attributes[i]))
+#
+#     print_select(__columns_list,__columns_list_num)
+#
+#
+# # Deprecated
+# def check_unique(table_name, column, value):
+#     columns = []
+#     for col in Catalog.tables[table_name].columns:
+#         columns.append(col)
+#     if len(find_leaf_place_with_condition(table_name, column, '=', value)):
+#         raise Exception("Index Module : column '%s' does not satisfy "
+#                         "unique constrains." % columns[column])
 
 
 # done

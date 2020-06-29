@@ -137,11 +137,9 @@ def delete(table_name: str, where: list = None):
 
 
 def show_table(table_name: str):
-    pass
-    # Catalog.exist_table(table_name)
-    # Catalog.show_table(table_name) # 显示属性名、类型、大小（char）、是否unique、是否主键、index情况等等
+    Catalog.not_exists_table(table_name)
+    Catalog.show_table(table_name) # 显示属性名、类型、大小（char）、是否unique
 
 
 def show_tables():
-    pass
-    # Catalog.show_tables() # 列出所有表名
+    Catalog.show_tables()
