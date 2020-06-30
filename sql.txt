@@ -1,7 +1,3 @@
-
-
-
-drop table S ;
 create table S(ID int,name char(12) unique, age int,gender char(1),primary key (ID));
 # skip this line
 insert into S values(1,'stz',20,'M');
@@ -205,7 +201,7 @@ insert into S values(198,'AHK',19,'M');
 insert into S values(199,'AHL',28,'F');
 insert into S values(200,'AHM',23,'F');
 #
-create index i_name on S (name);
+# create index i_name on S (name);
 #
 select * from S;
 select name from S where age < 20 and age > 10;

@@ -100,7 +100,6 @@ def create(arg: str):
                 raise Exception(f"The primary key {pk} you want is not in the attribute list.")
             else:
                 attributes[attribute_names.index(pk)]['unique'] = True
-        print(table_name, attributes, pk)
         API.create_table(table_name, attributes, pk)
 
     elif arg[:5] == 'index':
@@ -124,7 +123,6 @@ def create(arg: str):
 
         if ',' in indexed_attr:
             raise Exception('Only single attribute index is supported.')
-        print(index_name, table_name, indexed_attr)
         API.create_index(index_name, table_name, indexed_attr)
     else:
         raise Exception("The item you want to create is not supported.")
@@ -135,11 +133,9 @@ def drop(arg: str):
     arg = re.sub(' +', ' ', arg).strip()
     if arg[:5] == 'table':
         arg = arg[5:].strip()
-        print(arg)
         API.drop_table(arg)
     elif arg[:5] == 'index':
         arg = arg[5:].strip()
-        print(arg)
         API.drop_index(arg)
     else:
         raise Exception("The item you want to drop is not supported.")
@@ -158,7 +154,6 @@ def select(arg: str):
     location_where = arg.find('where')
     if location_where == -1:
         table_name = arg[location_from + len('from'):].strip()
-        print(table_name, attributes)
         API.select(table_name, attributes)
     else:
         table_name = arg[location_from + len('from'):location_where].strip()
@@ -180,7 +175,6 @@ def select(arg: str):
                 raise Exception(f"no operator found in {condition}")
             r_op = auto_type(r_op)
             where.append({'operator': operator, 'l_op': l_op, 'r_op': r_op})
-        print(table_name, attributes, where)
         API.select(table_name, attributes, where)
 
 
@@ -203,7 +197,6 @@ def insert(arg: str):
     values = arg[location_lbracket + 1: location_rbracket].split(',')
     values = list(map(str.strip, values))
     values = list(map(auto_type, values))
-    print(table_name, values)
     API.insert(table_name, values)
 
 
@@ -218,7 +211,6 @@ def delete(arg: str):
     location_where = arg.find('where')
     if location_where == -1:
         table_name = arg[location_from + 4:].strip()
-        print(table_name)
         API.delete(table_name)
     else:
         table_name = arg[location_from + 4: location_where].strip()
@@ -240,7 +232,6 @@ def delete(arg: str):
                 raise Exception(f"no operator found in {condition}")
             r_op = auto_type(r_op)
             where.append({'operator': operator, 'l_op': l_op, 'r_op': r_op})
-        print(table_name, where)
         API.delete(table_name, where)
 
 
@@ -255,7 +246,6 @@ def show(arg: str):
             raise Exception(f"The item you want to show is not supported.")
         else:
             table_name = arg[location_table + 5:].strip()
-            print(table_name)
             API.show_table(table_name)
     else:
         API.show_tables()

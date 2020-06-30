@@ -1,1 +1,1 @@
-{"S": {"columns": {"ID": [true, "int", 0], "name": [true, "char", 12], "age": [false, "int", 0], "gender": [false, "char", 1]}, "pk": 0}}
+{}

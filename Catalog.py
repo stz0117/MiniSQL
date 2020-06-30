@@ -9,7 +9,7 @@ indexcatalog = ''  # path of index catalog file
 indices = {}  # empty dict,to store indices
 
 
-class Table():  # data structure to save a table
+class Table:  # data structure to save a table
     def __init__(self, table_name, pk=0):
         self.table_name = table_name
         self.primary_key = pk
@@ -17,7 +17,7 @@ class Table():  # data structure to save a table
     columns = []
 
 
-class Column():  # data structure to save an attribute
+class Column:  # data structure to save an attribute
     def __init__(self, column_name, is_unique, type='char', length=16):
         self.column_name = column_name
         self.is_unique = is_unique
@@ -35,18 +35,10 @@ def __initialize__(__path):  # initialize the file of catalog
 
     if not os.path.exists(catalogpath):
         os.makedirs(catalogpath)
-
         f1 = open(tablecatalog, 'w')
         f2 = open(indexcatalog, 'w')
         f1.close()
         f2.close()
-
-        '''tables['sys'] = Table('sys', 0)
-        indices['sys_default_index'] = {'table': 'sys', 'column': 'attribute1'}
-        columns = []
-        columns.append(Column('attribute1', True))
-        columns.append(Column('attribute2', False))
-        tables['sys'].columns = columns'''
         __savefile__()
     __loadfile__()
 
@@ -67,12 +59,11 @@ def show_table(table_name: str):
         print(f"column name:{column.column_name}\t"
               f"is unique:{column.is_unique}\t"
               f"type:{column.type}\t", end='')
-        if (column.type == 'char'):
+        if column.type == 'char':
             print(f"length:{column.length}", end='')
         print('')
 
 
-# done
 def create_table(table_name, attributes, pk):
     global tables
     cur_table = Table(table_name, pk)
@@ -97,12 +88,10 @@ def create_table(table_name, attributes, pk):
     tables[table_name] = cur_table
 
 
-# done
 def drop_table(table_name):
     tables.pop(table_name)
 
 
-# done
 def check_types_of_table(table_name, values):
     cur_table = tables[table_name]
     if len(cur_table.columns) != len(values):
@@ -124,14 +113,12 @@ def check_types_of_table(table_name, values):
             pass
 
 
-# done
 def exists_table(table_name):
     for key in tables.keys():
         if key == table_name:
             raise Exception("Table already exists.")
 
 
-# done
 def not_exists_table(table_name):
     for key in tables.keys():
         if key == table_name:
@@ -139,7 +126,6 @@ def not_exists_table(table_name):
     raise Exception("Table does not exist.")
 
 
-# done
 def not_exists_index(index_name):
     for key in indices.keys():
         if key == index_name:
@@ -147,25 +133,21 @@ def not_exists_index(index_name):
     raise Exception("Index does not exist.")
 
 
-# done
 def exists_index(index_name):
     for key in indices.keys():
         if key == index_name:
             raise Exception("Index already exists.")
 
 
-# done
 def drop_index(index_name):
     indices.pop(index_name)
     print("Successfully deleted index '%s'." % index_name)
 
 
-# done
 def create_index(index_name, table, column):
     indices[index_name] = {'table': table, 'column': column}
 
 
-# done
 def check_select_statement(table_name, attributes, where):
     # raise an exception if something is wrong
     columns = []

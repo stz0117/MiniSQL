@@ -74,16 +74,13 @@ def select(table_name: str, attributes: list, where: list = None):
     Catalog.check_select_statement(table_name, attributes, where)
     #Index.select_from_table(table_name, attributes, where)
     col_dic = Catalog.get_column_dic(table_name)
-    print(col_dic)
     results = Buffer.find_record(table_name, col_dic, where)
-    print(results)
     numlist = []
     if attributes == ['*']:
         attributes = list(col_dic.keys())
         numlist = list(col_dic.values())
     else:
         for att in attributes:
-            print(att)
             numlist.append(col_dic[att])
 
     print_select(attributes, numlist, results)
